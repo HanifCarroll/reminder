@@ -1,5 +1,6 @@
 import sys
 import random
+import sqlite3
 from PySide2.QtGui import QIcon
 from PySide2.QtWidgets import QWidget, QSystemTrayIcon, QMenu, QPushButton,\
                             QLabel, QMessageBox, QVBoxLayout, QApplication
@@ -10,23 +11,18 @@ class MyWidget(QWidget):
     def __init__(self):
         QWidget.__init__(self)
 
-        self.setWindowIcon(QIcon('./assets/icon.png'))
+        self.db = sqlite3.connect('reminder.db')
+        self.initialize_db()
+
         self.tray_icon = QSystemTrayIcon(self)
-        self.tray_icon.setIcon(QIcon('./assets/icon.png'))
-        self.tray_icon.activated.connect(self.on_tray_icon_actived)
-        self.tray_icon.setToolTip('Current quote goes here.')
-        self.tray_icon.show()
+        self.tray_menu = QMenu()
+        self.initialize_tray_icon()
 
         self.disambiguate_timer = QTimer(self)
         self.disambiguate_timer.setSingleShot(True)
         self.disambiguate_timer.timeout.connect(
             self.disambiguate_timer_timeout)
 
-        self.tray_menu = QMenu()
-        exit_action = self.tray_menu.addAction('Exit')
-        exit_action.triggered.connect(sys.exit)
-
-        self.tray_icon.setContextMenu(self.tray_menu)
 
         self.hello = ["Hallo Welt", "你好，世界", "Hei maailma",
             "Hola Mundo", "Привет мир"]
@@ -61,9 +57,25 @@ class MyWidget(QWidget):
             self.disambiguate_timer.stop()
             print('double click')
 
+    def initialize_db(self):
+        self.db.execute('''CREATE TABLE IF NOT EXISTS reminder
+                            (text text)''')
+
+    def initialize_tray_icon(self):
+        self.tray_icon.setIcon(QIcon('./assets/icon.png'))
+        self.tray_icon.activated.connect(self.on_tray_icon_actived)
+        self.tray_icon.setToolTip('Current quote goes here.')
+        self.tray_icon.show()
+
+        exit_action = self.tray_menu.addAction('Exit')
+        exit_action.triggered.connect(sys.exit)
+
+        self.tray_icon.setContextMenu(self.tray_menu)
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     app.setQuitOnLastWindowClosed(False)
+    app.setWindowIcon(QIcon('./assets/icon.png'))
 
     widget = MyWidget()
     widget.resize(800, 600)
