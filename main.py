@@ -1,20 +1,28 @@
 import sys
 import random
-from PySide2 import QtGui
-from PySide2 import QtWidgets
-from PySide2.QtCore import Slot, Qt
+from PySide2.QtGui import QIcon
+from PySide2.QtWidgets import QWidget, QSystemTrayIcon, QMenu, QPushButton,\
+                            QLabel, QMessageBox, QVBoxLayout, QApplication
+from PySide2.QtCore import Slot, Qt, QTimer
 
 
-class MyWidget(QtWidgets.QWidget):
+class MyWidget(QWidget):
     def __init__(self):
-        QtWidgets.QWidget.__init__(self)
+        QWidget.__init__(self)
 
-        self.setWindowIcon(QtGui.QIcon('./assets/icon.png'))
-        self.tray_icon = QtWidgets.QSystemTrayIcon(QtGui.QIcon('./assets/icon.png'), parent=self)
+        self.setWindowIcon(QIcon('./assets/icon.png'))
+        self.tray_icon = QSystemTrayIcon(self)
+        self.tray_icon.setIcon(QIcon('./assets/icon.png'))
+        self.tray_icon.activated.connect(self.on_tray_icon_actived)
         self.tray_icon.setToolTip('Current quote goes here.')
         self.tray_icon.show()
 
-        self.tray_menu = QtWidgets.QMenu()
+        self.disambiguate_timer = QTimer(self)
+        self.disambiguate_timer.setSingleShot(True)
+        self.disambiguate_timer.timeout.connect(
+            self.disambiguate_timer_timeout)
+
+        self.tray_menu = QMenu()
         exit_action = self.tray_menu.addAction('Exit')
         exit_action.triggered.connect(sys.exit)
 
@@ -23,11 +31,11 @@ class MyWidget(QtWidgets.QWidget):
         self.hello = ["Hallo Welt", "你好，世界", "Hei maailma",
             "Hola Mundo", "Привет мир"]
 
-        self.button = QtWidgets.QPushButton("Click me!")
-        self.text = QtWidgets.QLabel("Hello World")
+        self.button = QPushButton("Click me!")
+        self.text = QLabel("Hello World")
         self.text.setAlignment(Qt.AlignCenter)
 
-        self.layout = QtWidgets.QVBoxLayout()
+        self.layout = QVBoxLayout()
         self.layout.addWidget(self.text)
         self.layout.addWidget(self.button)
         self.setLayout(self.layout)
@@ -35,7 +43,7 @@ class MyWidget(QtWidgets.QWidget):
         # Connecting the signal
         self.button.clicked.connect(self.magic)
 
-        self.popup = QtWidgets.QMessageBox()
+        self.popup = QMessageBox()
         self.popup.setText('A doctor a day keeps the apple away.')
 
     @Slot()
@@ -43,13 +51,23 @@ class MyWidget(QtWidgets.QWidget):
         self.text.setText(random.choice(self.hello))
         self.popup.show()
 
+    def disambiguate_timer_timeout(self):
+        self.popup.show()
+
+    def on_tray_icon_actived(self, reason):
+        if reason == QSystemTrayIcon.Trigger:
+            self.disambiguate_timer.start(150)
+        elif reason == QSystemTrayIcon.DoubleClick:
+            self.disambiguate_timer.stop()
+            print('double click')
 
 if __name__ == "__main__":
-    app = QtWidgets.QApplication(sys.argv)
+    app = QApplication(sys.argv)
+    app.setQuitOnLastWindowClosed(False)
 
     widget = MyWidget()
     widget.resize(800, 600)
     widget.setWindowTitle('Reminders')
-    widget.show()
+    # widget.show()
 
     sys.exit(app.exec_())
