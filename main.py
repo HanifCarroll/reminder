@@ -3,7 +3,8 @@ import random
 import sqlite3
 from PySide2.QtGui import QIcon
 from PySide2.QtWidgets import QWidget, QSystemTrayIcon, QMenu, QPushButton,\
-                            QLabel, QMessageBox, QVBoxLayout, QApplication
+                            QLabel, QMessageBox, QVBoxLayout, QApplication,\
+                            QHBoxLayout
 from PySide2.QtCore import Slot, Qt, QTimer
 
 
@@ -25,27 +26,35 @@ class MyWidget(QWidget):
         self.disambiguate_timer.timeout.connect(
             self.disambiguate_timer_timeout)
 
-        self.button = QPushButton('Random Reminder')
-        self.text = QLabel(self.active_reminder)
-        self.text.setAlignment(Qt.AlignCenter)
+        self.new_reminder_button = QPushButton('New')
+        self.random_reminder_button = QPushButton('Random Reminder')
+        self.reminder_text = QLabel(self.active_reminder)
+        self.reminder_text.setAlignment(Qt.AlignCenter)
 
-        self.layout = QVBoxLayout()
-        self.layout.addWidget(self.text)
-        self.layout.addWidget(self.button)
-        self.setLayout(self.layout)
+        self.v_box = QVBoxLayout()
+        self.h_box1 = QHBoxLayout()
+        self.h_box1.addWidget(self.new_reminder_button, alignment=Qt.AlignRight)
+        self.h_box2 = QHBoxLayout()
+        self.h_box2.addWidget(self.reminder_text)
+        self.h_box3 = QHBoxLayout()
+        self.h_box3.addWidget(self.random_reminder_button, alignment=Qt.AlignHCenter)
+        self.v_box.addLayout(self.h_box1)
+        self.v_box.addLayout(self.h_box2)
+        self.v_box.addLayout(self.h_box3)
+        self.setLayout(self.v_box)
 
         # Connecting the signal
-        self.button.clicked.connect(self.choose_new_reminder)
+        self.random_reminder_button.clicked.connect(self.choose_random_reminder)
 
         self.popup = QMessageBox()
         self.popup.setText(self.active_reminder)
 
     @Slot()
     def on_button_press(self):
-        self.choose_new_reminder()
+        self.choose_random_reminder()
 
     def disambiguate_timer_timeout(self):
-        self.popup.show()
+        print('single click')
 
     def on_tray_icon_activated(self, reason):
         if reason == QSystemTrayIcon.Trigger:
@@ -75,12 +84,12 @@ class MyWidget(QWidget):
 
         self.tray_icon.setContextMenu(self.tray_menu)
 
-    def choose_new_reminder(self):
+    def choose_random_reminder(self):
         if not len(self.reminders):
             self.show_alert('Please add a new reminder.')
             return
         self.active_reminder = random.choice(self.reminders)
-        self.text.setText(self.active_reminder)
+        self.reminder_text.setText(self.active_reminder)
         self.tray_icon.setToolTip(self.active_reminder)
 
     def show_alert(self, text):
@@ -93,7 +102,7 @@ if __name__ == "__main__":
     app.setWindowIcon(QIcon('./assets/icon.png'))
 
     widget = MyWidget()
-    widget.resize(800, 600)
+    widget.resize(400, 300)
     widget.setWindowTitle('Reminders')
     widget.show()
 
