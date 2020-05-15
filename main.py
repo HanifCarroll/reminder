@@ -12,6 +12,8 @@ class MyWidget(QWidget):
         QWidget.__init__(self)
 
         self.db = sqlite3.connect('reminder.db')
+        self.reminders = None
+        self.active_reminder = None
         self.initialize_db()
 
         self.tray_icon = QSystemTrayIcon(self)
@@ -23,12 +25,8 @@ class MyWidget(QWidget):
         self.disambiguate_timer.timeout.connect(
             self.disambiguate_timer_timeout)
 
-
-        self.hello = ["Hallo Welt", "你好，世界", "Hei maailma",
-            "Hola Mundo", "Привет мир"]
-
-        self.button = QPushButton("Click me!")
-        self.text = QLabel("Hello World")
+        self.button = QPushButton('Random Reminder')
+        self.text = QLabel(self.active_reminder)
         self.text.setAlignment(Qt.AlignCenter)
 
         self.layout = QVBoxLayout()
@@ -37,20 +35,19 @@ class MyWidget(QWidget):
         self.setLayout(self.layout)
 
         # Connecting the signal
-        self.button.clicked.connect(self.magic)
+        self.button.clicked.connect(self.choose_new_reminder)
 
         self.popup = QMessageBox()
-        self.popup.setText('A doctor a day keeps the apple away.')
+        self.popup.setText(self.active_reminder)
 
     @Slot()
-    def magic(self):
-        self.text.setText(random.choice(self.hello))
-        self.popup.show()
+    def on_button_press(self):
+        self.choose_new_reminder()
 
     def disambiguate_timer_timeout(self):
         self.popup.show()
 
-    def on_tray_icon_actived(self, reason):
+    def on_tray_icon_activated(self, reason):
         if reason == QSystemTrayIcon.Trigger:
             self.disambiguate_timer.start(150)
         elif reason == QSystemTrayIcon.DoubleClick:
@@ -60,17 +57,25 @@ class MyWidget(QWidget):
     def initialize_db(self):
         self.db.execute('''CREATE TABLE IF NOT EXISTS reminder
                             (text text)''')
+        self.reminders = list(map(lambda row: row[0], self.db.execute('SELECT * FROM reminder')\
+            .fetchall()))
+        self.active_reminder = random.choice(self.reminders)
 
     def initialize_tray_icon(self):
         self.tray_icon.setIcon(QIcon('./assets/icon.png'))
-        self.tray_icon.activated.connect(self.on_tray_icon_actived)
-        self.tray_icon.setToolTip('Current quote goes here.')
+        self.tray_icon.activated.connect(self.on_tray_icon_activated)
+        self.tray_icon.setToolTip(self.active_reminder)
         self.tray_icon.show()
 
         exit_action = self.tray_menu.addAction('Exit')
         exit_action.triggered.connect(sys.exit)
 
         self.tray_icon.setContextMenu(self.tray_menu)
+
+    def choose_new_reminder(self):
+        self.active_reminder = random.choice(self.reminders)
+        self.text.setText(self.active_reminder)
+        self.tray_icon.setToolTip(self.active_reminder)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
@@ -80,6 +85,6 @@ if __name__ == "__main__":
     widget = MyWidget()
     widget.resize(800, 600)
     widget.setWindowTitle('Reminders')
-    # widget.show()
+    widget.show()
 
     sys.exit(app.exec_())
