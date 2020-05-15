@@ -113,24 +113,30 @@ class NewReminderWindow(QWidget):
         self.resize(500, 250)
         self.setWindowTitle('Add New Reminder')
 
-        self.new_reminder_text = QPlainTextEdit()
-        self.new_reminder_text.setFixedHeight(90)
-        self.new_reminder_text.setFixedWidth(500)
+        self.new_reminder_text_input = QPlainTextEdit()
+        self.new_reminder_text_input.setFixedHeight(90)
+        self.new_reminder_text_input.setFixedWidth(500)
 
         self.cancel_button = QPushButton('Cancel')
         self.cancel_button.setFixedWidth(self.cancel_button.minimumSizeHint().width())
+        self.cancel_button.clicked.connect(self.on_cancel_clicked)
         self.save_button = QPushButton('Save')
         self.save_button.setFixedWidth((self.save_button.minimumSizeHint().width()))
 
         self.v_box = QVBoxLayout()
         self.h_box1 = QHBoxLayout()
-        self.h_box1.addWidget(self.new_reminder_text, alignment=Qt.AlignHCenter)
+        self.h_box1.addWidget(self.new_reminder_text_input, alignment=Qt.AlignHCenter)
         self.h_box2 = QHBoxLayout()
         self.h_box2.addWidget(self.cancel_button)
         self.h_box2.addWidget(self.save_button)
         self.v_box.addLayout(self.h_box1)
         self.v_box.addLayout(self.h_box2)
         self.setLayout(self.v_box)
+
+    @Slot()
+    def on_cancel_clicked(self):
+        self.hide()
+        self.new_reminder_text_input.clear()
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
