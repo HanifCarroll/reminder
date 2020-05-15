@@ -4,11 +4,11 @@ import sqlite3
 from PySide2.QtGui import QIcon
 from PySide2.QtWidgets import QWidget, QSystemTrayIcon, QMenu, QPushButton,\
                             QLabel, QMessageBox, QVBoxLayout, QApplication,\
-                            QHBoxLayout
+                            QHBoxLayout, QPlainTextEdit
 from PySide2.QtCore import Slot, Qt, QTimer
 
 
-class MyWidget(QWidget):
+class MainWindow(QWidget):
     def __init__(self):
         QWidget.__init__(self)
 
@@ -27,7 +27,11 @@ class MyWidget(QWidget):
             self.disambiguate_timer_timeout)
 
         self.new_reminder_button = QPushButton('New')
+        self.new_reminder_button.clicked.connect(self.on_new_reminder_button_clicked)
+
         self.random_reminder_button = QPushButton('Random Reminder')
+        self.random_reminder_button.clicked.connect(self.on_random_reminder_button_clicked)
+
         self.reminder_text = QLabel(self.active_reminder)
         self.reminder_text.setAlignment(Qt.AlignCenter)
 
@@ -43,19 +47,24 @@ class MyWidget(QWidget):
         self.v_box.addLayout(self.h_box3)
         self.setLayout(self.v_box)
 
-        # Connecting the signal
-        self.random_reminder_button.clicked.connect(self.choose_random_reminder)
-
         self.popup = QMessageBox()
         self.popup.setText(self.active_reminder)
 
+        self.new_reminder_window = NewReminderWindow()
+
     @Slot()
-    def on_button_press(self):
+    def on_random_reminder_button_clicked(self):
         self.choose_random_reminder()
 
+    @Slot()
+    def on_new_reminder_button_clicked(self):
+        self.new_reminder_window.show()
+
+    @Slot()
     def disambiguate_timer_timeout(self):
         print('single click')
 
+    @Slot()
     def on_tray_icon_activated(self, reason):
         if reason == QSystemTrayIcon.Trigger:
             self.disambiguate_timer.start(150)
@@ -88,20 +97,47 @@ class MyWidget(QWidget):
         if not len(self.reminders):
             self.show_alert('Please add a new reminder.')
             return
+
         self.active_reminder = random.choice(self.reminders)
         self.reminder_text.setText(self.active_reminder)
+        self.popup.setText(self.active_reminder)
         self.tray_icon.setToolTip(self.active_reminder)
 
     def show_alert(self, text):
         self.popup.setText(text)
         self.popup.show()
 
+class NewReminderWindow(QWidget):
+    def __init__(self):
+        QWidget.__init__(self)
+        self.resize(500, 250)
+        self.setWindowTitle('Add New Reminder')
+
+        self.new_reminder_text = QPlainTextEdit()
+        self.new_reminder_text.setFixedHeight(90)
+        self.new_reminder_text.setFixedWidth(500)
+
+        self.cancel_button = QPushButton('Cancel')
+        self.cancel_button.setFixedWidth(self.cancel_button.minimumSizeHint().width())
+        self.save_button = QPushButton('Save')
+        self.save_button.setFixedWidth((self.save_button.minimumSizeHint().width()))
+
+        self.v_box = QVBoxLayout()
+        self.h_box1 = QHBoxLayout()
+        self.h_box1.addWidget(self.new_reminder_text, alignment=Qt.AlignHCenter)
+        self.h_box2 = QHBoxLayout()
+        self.h_box2.addWidget(self.cancel_button)
+        self.h_box2.addWidget(self.save_button)
+        self.v_box.addLayout(self.h_box1)
+        self.v_box.addLayout(self.h_box2)
+        self.setLayout(self.v_box)
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     app.setQuitOnLastWindowClosed(False)
     app.setWindowIcon(QIcon('./assets/icon.png'))
 
-    widget = MyWidget()
+    widget = MainWindow()
     widget.resize(400, 300)
     widget.setWindowTitle('Reminders')
     widget.show()
