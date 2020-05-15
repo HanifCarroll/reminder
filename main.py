@@ -60,6 +60,7 @@ class MainWindow(QWidget):
     @Slot()
     def on_new_reminder_button_clicked(self):
         self.new_reminder_window.show()
+        self.new_reminder_window.new_reminder_text_input.setFocus()
 
     @Slot()
     def disambiguate_timer_timeout(self):
@@ -111,7 +112,8 @@ class MainWindow(QWidget):
         self.tray_icon.setToolTip(self.active_reminder)
 
     def save_new_reminder(self, text):
-        print(text)
+        self.reminders.append(text)
+        self.db.execute('''INSERT INTO reminder (text) VALUES (?)''', (text,))
 
     def show_alert(self, text):
         self.popup.setText(text)
