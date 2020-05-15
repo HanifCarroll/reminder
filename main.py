@@ -56,10 +56,13 @@ class MyWidget(QWidget):
 
     def initialize_db(self):
         self.db.execute('''CREATE TABLE IF NOT EXISTS reminder
-                            (text text)''')
+                            (id INTEGER PRIMARY KEY, text TEXT)''')
         self.reminders = list(map(lambda row: row[0], self.db.execute('SELECT * FROM reminder')\
             .fetchall()))
-        self.active_reminder = random.choice(self.reminders)
+        if len(self.reminders):
+            self.active_reminder = random.choice(self.reminders)
+        else:
+            self.active_reminder = 'No saved reminders.  Try adding one now :)'
 
     def initialize_tray_icon(self):
         self.tray_icon.setIcon(QIcon('./assets/icon.png'))
@@ -73,9 +76,16 @@ class MyWidget(QWidget):
         self.tray_icon.setContextMenu(self.tray_menu)
 
     def choose_new_reminder(self):
+        if not len(self.reminders):
+            self.show_alert('Please add a new reminder.')
+            return
         self.active_reminder = random.choice(self.reminders)
         self.text.setText(self.active_reminder)
         self.tray_icon.setToolTip(self.active_reminder)
+
+    def show_alert(self, text):
+        self.popup.setText(text)
+        self.popup.show()
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
