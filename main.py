@@ -51,6 +51,7 @@ class MainWindow(QWidget):
         self.popup.setText(self.active_reminder)
 
         self.new_reminder_window = NewReminderWindow()
+        self.new_reminder_window.save_button.clicked.connect(self.on_save_clicked)
 
     @Slot()
     def on_random_reminder_button_clicked(self):
@@ -63,6 +64,12 @@ class MainWindow(QWidget):
     @Slot()
     def disambiguate_timer_timeout(self):
         print('single click')
+
+    @Slot()
+    def on_save_clicked(self):
+        self.save_new_reminder(self.new_reminder_window.new_reminder_text_input.toPlainText())
+        self.new_reminder_window.new_reminder_text_input.clear()
+        self.new_reminder_window.hide()
 
     @Slot()
     def on_tray_icon_activated(self, reason):
@@ -102,6 +109,9 @@ class MainWindow(QWidget):
         self.reminder_text.setText(self.active_reminder)
         self.popup.setText(self.active_reminder)
         self.tray_icon.setToolTip(self.active_reminder)
+
+    def save_new_reminder(self, text):
+        print(text)
 
     def show_alert(self, text):
         self.popup.setText(text)
