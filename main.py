@@ -26,6 +26,9 @@ class MainWindow(QWidget):
         self.disambiguate_timer.timeout.connect(
             self.disambiguate_timer_timeout)
 
+        self.view_reminders_button = QPushButton('View')
+        self.view_reminders_button.clicked.connect(self.on_view_reminders_button_clicked)
+
         self.new_reminder_button = QPushButton('New')
         self.new_reminder_button.clicked.connect(self.on_new_reminder_button_clicked)
 
@@ -37,6 +40,7 @@ class MainWindow(QWidget):
 
         self.v_box = QVBoxLayout()
         self.h_box1 = QHBoxLayout()
+        self.h_box1.addWidget(self.view_reminders_button, alignment=Qt.AlignLeft)
         self.h_box1.addWidget(self.new_reminder_button, alignment=Qt.AlignRight)
         self.h_box2 = QHBoxLayout()
         self.h_box2.addWidget(self.reminder_text)
@@ -53,6 +57,8 @@ class MainWindow(QWidget):
         self.new_reminder_window = NewReminderWindow()
         self.new_reminder_window.save_button.clicked.connect(self.on_save_clicked)
 
+        self.view_reminders_window = ViewRemindersWindow()
+
     @Slot()
     def on_random_reminder_button_clicked(self):
         self.choose_random_reminder()
@@ -61,6 +67,10 @@ class MainWindow(QWidget):
     def on_new_reminder_button_clicked(self):
         self.new_reminder_window.show()
         self.new_reminder_window.new_reminder_text_input.setFocus()
+
+    @Slot()
+    def on_view_reminders_button_clicked(self):
+        self.view_reminders_window.show()
 
     @Slot()
     def disambiguate_timer_timeout(self):
@@ -83,7 +93,7 @@ class MainWindow(QWidget):
     def initialize_db(self):
         self.db.execute('''CREATE TABLE IF NOT EXISTS reminder
                             (id INTEGER PRIMARY KEY, text TEXT)''')
-        self.reminders = list(map(lambda row: row[0], self.db.execute('SELECT * FROM reminder')\
+        self.reminders = list(map(lambda row: (row[0], row[1]), self.db.execute('SELECT * FROM reminder')\
             .fetchall()))
         if len(self.reminders):
             self.active_reminder = random.choice(self.reminders)
@@ -107,13 +117,14 @@ class MainWindow(QWidget):
             return
 
         self.active_reminder = random.choice(self.reminders)
-        self.reminder_text.setText(self.active_reminder)
-        self.popup.setText(self.active_reminder)
-        self.tray_icon.setToolTip(self.active_reminder)
+        self.reminder_text.setText(self.active_reminder[1])
+        self.popup.setText(self.active_reminder[1])
+        self.tray_icon.setToolTip(self.active_reminder[1])
 
     def save_new_reminder(self, text):
         self.reminders.append(text)
         self.db.execute('''INSERT INTO reminder (text) VALUES (?)''', (text,))
+        self.db.commit()
 
     def show_alert(self, text):
         self.popup.setText(text)
@@ -149,6 +160,13 @@ class NewReminderWindow(QWidget):
     def on_cancel_clicked(self):
         self.hide()
         self.new_reminder_text_input.clear()
+
+class ViewRemindersWindow(QWidget):
+    def __init__(self):
+        QWidget.__init__(self)
+        self.resize(400, 600)
+        self.setWindowTitle('View Reminders')
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
